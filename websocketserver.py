@@ -1,7 +1,7 @@
 import socket
 import sys
 from datetime import datetime
-from testeEmail import send_email
+from test_email import send_email
 
 HOST = ''
 PORT = 80
@@ -27,7 +27,7 @@ except socket.error:
     sys.exit()
 
 mysock.listen(5)
-print("Servidor rodando na porta 80...")
+print(f"Servidor rodando na porta: {PORT}...")
 
 while True:
     conn, addr = mysock.accept()

@@ -159,7 +159,7 @@ void loop() {
 
       if (stateLdr > limiarLdr || touchValue < limiarTouch) {
         tone(buzzer, 1000, 200);
-        delay(500);
+        //delay(500);
         tone(buzzer, 1000, 200);
 
         state = WAITING_PASSWORD;
