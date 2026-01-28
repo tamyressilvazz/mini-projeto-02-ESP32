@@ -1,35 +1,35 @@
 #include <WiFi.h>
 
-const char* ssid = "Softex 2";
-const char* password = "SoftexUFP3!!";
+const char* ssid = "CINGUESTS";
+const char* password = "acessocin";
 
-const char* host = "192.168.1.19";
+const char* host = "192.168.155.29";
 
 WiFiClient client;
 
 // Pinos do LED e Buzzer
-const int ledRed = 13;
-const int buzzer = 11;
-const int btn = 10;
+const int ledRed = 25;
+const int buzzer = 26;
+const int btn = 33;
 const int ldr = A0;
 
 // Servo
-const int servoPin = 12;
-const int servoChannel = 0;
+const int servoPin = 32;
+
 const int servoFreq = 50;      // 50 Hz (servo padrão)
 const int servoResolution = 16;
 
 const int touchPin = T0;
-int limiarTouch = 30; 
+int limiarTouch = 30;
 
 // Configuração Display 7 Segmentos
-#define A 8
-#define B 9
-#define C 4
-#define D 3
-#define E 2
-#define F 7
-#define G 6
+#define A 17
+#define B 16
+#define C 27
+#define D 14
+#define E 12
+#define F 5
+#define G 18
 
 bool seven_segments[10][7] = { 
   { 1,1,1,1,1,1,0 }, // 0
@@ -83,9 +83,8 @@ int valueClient = 0;
 
 
 void setup() {
-  ledcSetup(servoChannel, servoFreq, servoResolution);
-  ledcAttachPin(servoPin, servoChannel);
-  ledcWrite(servoChannel, angleToDuty(0));  // Trava começa aberta
+  ledcAttach(servoPin, servoFreq, servoResolution);
+  ledcWrite(servoPin, angleToDuty(0));  // Trava começa aberta
 
   pinMode(A, OUTPUT); pinMode(B, OUTPUT); pinMode(C, OUTPUT);
   pinMode(D, OUTPUT); pinMode(E, OUTPUT); pinMode(F, OUTPUT);
@@ -127,7 +126,7 @@ void loop() {
       digitalWrite(ledRed, LOW);
       noTone(buzzer);
 
-      ledcWrite(servoChannel, angleToDuty(0)); // posição inicial
+      ledcWrite(servoPin, angleToDuty(0)); // posição inicial
 
       if (btnState == LOW) {
         state = ARMING;
@@ -148,7 +147,7 @@ void loop() {
       if (millis() - timerState >= 10000) {
         state = ACTIVATED;
         tries = 0;
-        ledcWrite(servoChannel, angleToDuty(90)); // fecha a trava
+        ledcWrite(servoPin, angleToDuty(90)); // fecha a trava
         Serial.println("ALARME ATIVADO! Trava fechada.");
       }
       break;
@@ -224,7 +223,7 @@ void checkPassword() {
       Serial.println(user);
       Serial.println("Alarme desativado.");
 
-      ledcWrite(servoChannel, angleToDuty(0)); // abre a trava
+      ledcWrite(servoPin, angleToDuty(0)); // abre a trava
       turnDisplayOff();
       state = DEACTIVATED;
       noTone(buzzer);

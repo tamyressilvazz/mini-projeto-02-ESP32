@@ -7,6 +7,9 @@ HOST = ''
 PORT = 80
 USERS_FILE = "users.txt"
 
+host_name = socket.gethostname()
+host_ip = socket.gethostbyname(host_name)
+
 failed_attempts = 0
 
 def load_users():
@@ -27,7 +30,7 @@ except socket.error:
     sys.exit()
 
 mysock.listen(5)
-print(f"Servidor rodando na porta: {PORT}...")
+print(f"Servidor rodando em: {host_ip}...")
 
 while True:
     conn, addr = mysock.accept()
