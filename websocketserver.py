@@ -4,7 +4,7 @@ from datetime import datetime
 from test_email import send_email
 
 HOST = ''
-PORT = 80
+PORT = 1408
 USERS_FILE = "users.txt"
 
 host_name = socket.gethostname()
@@ -51,6 +51,7 @@ while True:
 
         if password in users:
             response_body = "USER:" + users[password]
+            print(response_body)
             failed_attempts = 0  # zera falhas após sucesso
         else:
             failed_attempts += 1
@@ -59,6 +60,9 @@ while True:
             if failed_attempts >= 2:
                 send_email()
                 failed_attempts = 0  # evita spam de emails
+
+    elif "GET /test_connection" in request:
+        response_body = "OK"
 
     response = (
         "HTTP/1.1 200 OK\r\n"

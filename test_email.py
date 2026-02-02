@@ -3,8 +3,8 @@ from email.mime.text import MIMEText
 from datetime import datetime
 
 def send_email():
-    email = "rria4@proton.me"
-    passw = "Circuit0$"
+    email = "testeprojeto883@gmail.com"
+    passw = "bngv jxfy dzra cuqx"
     password = passw
     sender = email
     receiver = email

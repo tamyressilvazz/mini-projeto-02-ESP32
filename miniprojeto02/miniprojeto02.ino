@@ -1,26 +1,30 @@
 #include <WiFi.h>
+#include <ESP32Servo.h>
 
-const char* ssid = "CINGUESTS";
-const char* password = "acessocin";
-
-const char* host = "192.168.155.29";
-
+//Wifi
+const char* ssid = "Softex_Conv";
+const char* password = "Softex2023";
+const char* host = "192.168.155.17";
+const int httpPort = 1408;
 WiFiClient client;
 
 // Pinos do LED e Buzzer
 const int ledRed = 25;
 const int buzzer = 26;
 const int btn = 33;
-const int ldr = A0;
+const int ldr = 36; //A0
+const int touchPin = 4; //T0
 
 // Servo
 const int servoPin = 32;
+Servo myservo;
+// const int servoFreq = 50;      // 50 Hz (servo padrão)
+// const int servoResolution = 16;
 
-const int servoFreq = 50;      // 50 Hz (servo padrão)
-const int servoResolution = 16;
+// uint32_t angleToDuty(int angle) {
+//   return map(angle, 0, 180, 1638, 8192);
+// }
 
-const int touchPin = T0;
-int limiarTouch = 30;
 
 // Configuração Display 7 Segmentos
 #define A 17
@@ -43,12 +47,6 @@ bool seven_segments[10][7] = {
   { 1,1,1,1,1,1,1 }, // 8
   { 1,1,1,1,0,1,1 }  // 9
 };
-
-
-uint32_t angleToDuty(int angle) {
-  return map(angle, 0, 180, 1638, 8192);
-}
-
 
 void writeNumber(int num) {
   if (num < 0 || num > 9) return;
@@ -77,15 +75,33 @@ enum State { DEACTIVATED, ARMING, ACTIVATED, WAITING_PASSWORD, TRIGGERED };
 State state = DEACTIVATED;
 String input = "";
 int tries = 0;
-int limiarLdr = 200;
+int limiarLdr = 1000;
 unsigned long timerState = 0;
 int valueClient = 0;
+int limiarTouch = 300;
 
+bool isHostReachable() {
+  if (!client.connect(host, httpPort)) {
+    Serial.println("A conexão com o host falhou.");
+    return false;
+  }
+
+  client.print(String("GET /test_connection") + password + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +
+               "Connection: close\r\n\r\n");
+
+  unsigned long timeout = millis();
+  while (client.available() == 0) {
+    if (millis() - timeout > 5000) {
+      client.stop();
+      Serial.println("A conexão com o host expirou.");
+      return false;
+    }
+  }
+  return true;
+}
 
 void setup() {
-  ledcAttach(servoPin, servoFreq, servoResolution);
-  ledcWrite(servoPin, angleToDuty(0));  // Trava começa aberta
-
   pinMode(A, OUTPUT); pinMode(B, OUTPUT); pinMode(C, OUTPUT);
   pinMode(D, OUTPUT); pinMode(E, OUTPUT); pinMode(F, OUTPUT);
   pinMode(G, OUTPUT);
@@ -94,21 +110,30 @@ void setup() {
   pinMode(buzzer, OUTPUT);
   pinMode(btn, INPUT_PULLUP);
   pinMode(ldr, INPUT);
+  myservo.attach(servoPin);
   
   Serial.begin(115200);
   Serial.setTimeout(50);
 
   WiFi.begin(ssid, password);
 
-  Serial.println("Sistema Iniciado. Pressione o botao para armar.");
-
   while (WiFi.status() != WL_CONNECTED) {
-
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.println("WiFi connected");
+  Serial.println("\nWiFi connected.");
+
+  
+  Serial.print("Connecando ao host ");
+  Serial.print(host);
+
+  while (!isHostReachable()) {
+    Serial.println("Tentando novamente.");
+    delay(500);
+  }
+
+  Serial.println("\nHost conectado.");
+  Serial.println("Sistema Iniciado. Pressione o botão para armar.");
 
 }
 
@@ -117,7 +142,6 @@ void loop() {
   int touchValue = touchRead(touchPin);
 
   int btnState = digitalRead(btn);
-;
 
   switch(state) {
     case DEACTIVATED: {
@@ -126,7 +150,8 @@ void loop() {
       digitalWrite(ledRed, LOW);
       noTone(buzzer);
 
-      ledcWrite(servoPin, angleToDuty(0)); // posição inicial
+      //ledcWrite(servoPin, angleToDuty(0)); // posição inicial
+      myservo.write(0);
 
       if (btnState == LOW) {
         state = ARMING;
@@ -147,7 +172,8 @@ void loop() {
       if (millis() - timerState >= 10000) {
         state = ACTIVATED;
         tries = 0;
-        ledcWrite(servoPin, angleToDuty(90)); // fecha a trava
+        //ledcWrite(servoPin, angleToDuty(90)); // fecha a trava
+        myservo.write(90);
         Serial.println("ALARME ATIVADO! Trava fechada.");
       }
       break;
@@ -158,7 +184,7 @@ void loop() {
 
       if (stateLdr > limiarLdr || touchValue < limiarTouch) {
         tone(buzzer, 1000, 200);
-        //delay(500);
+        delay(500);
         tone(buzzer, 1000, 200);
 
         state = WAITING_PASSWORD;
@@ -167,7 +193,6 @@ void loop() {
         tries = 0;
 
         Serial.println("Intrusão detectada! Digite a senha e aperte ENTER (10s):");
-        Serial.println(touchValue);
       }
       break;
     }
@@ -219,11 +244,9 @@ void checkPassword() {
     String user = sendPasswordToServer(input);
 
     if (user.length() > 0) {
-      Serial.print("Usuário autenticado: ");
-      Serial.println(user);
-      Serial.println("Alarme desativado.");
+      Serial.println("Usuário autenticado: " + user);
+      Serial.println("Alarme desativado. Pressione o botão para armar.");
 
-      ledcWrite(servoPin, angleToDuty(0)); // abre a trava
       turnDisplayOff();
       state = DEACTIVATED;
       noTone(buzzer);
@@ -234,8 +257,7 @@ void checkPassword() {
       input = "";
 
       Serial.println("Senha incorreta!");
-      Serial.print("Tentativas: ");
-      Serial.println(tries);
+      Serial.println("Tentativas: " + tries);
 
       if (tries >= 2) {
         Serial.println("Número máximo de tentativas atingido!");
@@ -251,8 +273,6 @@ void checkPassword() {
 
 String sendPasswordToServer(String password) {
 
-  const int httpPort = 80;
-
   if (!client.connect(host, httpPort)) {
     Serial.println("Falha ao conectar no servidor");
     return "";
@@ -266,6 +286,7 @@ String sendPasswordToServer(String password) {
   while (client.available() == 0) {
     if (millis() - timeout > 5000) {
       client.stop();
+      Serial.println("Connection to host timed out!");
       return "";
     }
   }
