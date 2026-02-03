@@ -18,12 +18,6 @@ const int touchPin = 4; //T0
 // Servo
 const int servoPin = 32;
 Servo myservo;
-// const int servoFreq = 50;      // 50 Hz (servo padrão)
-// const int servoResolution = 16;
-
-// uint32_t angleToDuty(int angle) {
-//   return map(angle, 0, 180, 1638, 8192);
-// }
 
 
 // Configuração Display 7 Segmentos
@@ -75,14 +69,14 @@ enum State { DEACTIVATED, ARMING, ACTIVATED, WAITING_PASSWORD, TRIGGERED };
 State state = DEACTIVATED;
 String input = "";
 int tries = 0;
-int limiarLdr = 1000;
+int limiarLdr = 1300;
 unsigned long timerState = 0;
 int valueClient = 0;
 int limiarTouch = 300;
 
 bool isHostReachable() {
   if (!client.connect(host, httpPort)) {
-    Serial.println("A conexão com o host falhou.");
+    // Serial.println("A conexão com o host falhou.");
     return false;
   }
 
@@ -94,7 +88,7 @@ bool isHostReachable() {
   while (client.available() == 0) {
     if (millis() - timeout > 5000) {
       client.stop();
-      Serial.println("A conexão com o host expirou.");
+      // Serial.println("A conexão com o host expirou.");
       return false;
     }
   }
@@ -128,7 +122,7 @@ void setup() {
   Serial.print(host);
 
   while (!isHostReachable()) {
-    Serial.println("Tentando novamente.");
+    Serial.print(".");
     delay(500);
   }
 
@@ -140,6 +134,7 @@ void setup() {
 void loop() {
   int stateLdr = analogRead(ldr);
   int touchValue = touchRead(touchPin);
+  
 
   int btnState = digitalRead(btn);
 
@@ -150,8 +145,7 @@ void loop() {
       digitalWrite(ledRed, LOW);
       noTone(buzzer);
 
-      //ledcWrite(servoPin, angleToDuty(0)); // posição inicial
-      myservo.write(0);
+      myservo.write(0); // posição inicial
 
       if (btnState == LOW) {
         state = ARMING;
@@ -172,8 +166,7 @@ void loop() {
       if (millis() - timerState >= 10000) {
         state = ACTIVATED;
         tries = 0;
-        //ledcWrite(servoPin, angleToDuty(90)); // fecha a trava
-        myservo.write(90);
+        myservo.write(90); // fecha a trava
         Serial.println("ALARME ATIVADO! Trava fechada.");
       }
       break;
