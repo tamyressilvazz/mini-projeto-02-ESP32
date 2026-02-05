@@ -2,8 +2,8 @@
 #include <ESP32Servo.h>
 
 //Wifi
-const char* ssid = "Softex_Conv";
-const char* password = "Softex2023";
+const char* ssid = "";
+const char* password = "";
 const char* host = "192.168.155.17";
 const int httpPort = 1408;
 WiFiClient client;
